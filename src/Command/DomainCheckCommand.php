@@ -44,7 +44,7 @@ class DomainCheckCommand extends Command
 
         $this->resultFile = dirname(__DIR__, 2) . '/public/target/result-check-domains.csv';
 
-        $this->toSleep = 2;
+        $this->toSleep = 1;
 
         parent::__construct();
     }
