@@ -56,7 +56,7 @@ This file contians all the source code used in this project. You can append more
 
 Use the following command inside the php-fpm docker container to execute the script.
 ```
-$ php bin/console app:app:domain-check
+$ php bin/console app:domain-check
 ```
 
 The outcome of this process will be saved in the following file.
