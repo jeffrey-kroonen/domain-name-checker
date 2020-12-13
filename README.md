@@ -54,7 +54,7 @@ You can find the source code in the following path.
 
 This file contians all the source code used in this project. You can append more top level domains to the variable ``` $targetTopDomains ```. All the top level domains will be checked on availibility.  
 
-Use the following command inside the php-fpm docker container to execute the script. You have to specify a type. The type can ```versio``` or ```elhacker```.
+Use the following command inside the php-fpm docker container to execute the script. You have to specify a type. The type must be ```versio``` or ```elhacker```.
 ```
 $ php bin/console app:domain-check <type>
 ```
