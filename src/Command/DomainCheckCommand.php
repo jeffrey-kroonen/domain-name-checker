@@ -44,6 +44,8 @@ class DomainCheckCommand extends Command
 
         $this->resultFile = dirname(__DIR__, 2) . '/public/target/result-check-domains.csv';
 
+        $this->toSleep = 2;
+
         parent::__construct();
     }
 
@@ -51,12 +53,15 @@ class DomainCheckCommand extends Command
     {
         $this
             ->setDescription('Check domains from target file on availibity.')
+            ->addArgument('type', InputArgument::REQUIRED, 'Choose a domain check source. (versio, elhacker)')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        $type = $input->getArgument('type');
 
         /**
          * Check if given file is a real file.
@@ -94,28 +99,64 @@ class DomainCheckCommand extends Command
 
                 foreach ($targetTopDomains as $targetTopDomain) {
 
-                    $endpoint = $this->baseUrl . '/domains/' . trim(strtolower($data[0])) . $targetTopDomain . '/availability';
-                    /**
-                     * Http request to versio
-                     */
-                    $res = $this->client->request('GET', $endpoint, [
-                            'auth_basic' => [$_ENV['VERSIO_USERNAME'], $_ENV['VERSIO_PASSWORD']]
-                        ]
-                    );
+                    switch ($type) {
+                        case 'versio':
+                                $endpoint = $this->baseUrl . '/domains/' . trim(strtolower($data[0])) . $targetTopDomain . '/availability';
+                                /**
+                                 * Http request to versio
+                                 */
+                                $res = $this->client->request('GET', $endpoint, [
+                                        'auth_basic' => [$_ENV['VERSIO_USERNAME'], $_ENV['VERSIO_PASSWORD']]
+                                    ]
+                                );
+            
+                                /**
+                                 * Set result set.
+                                 */
+                                if ($res->toArray()['available']) {
+                                    $result = 'beschikbaar';
+                                } else {
+                                    $result = 'niet beschikbaar';
+                                }
+            
+                                $resultSet[] = [
+                                    (trim(strtolower($data[0])) . $targetTopDomain),
+                                    $result
+                                ];
+                            break;
+                        case 'elhacker':
 
-                    /**
-                     * Set result set.
-                     */
-                    if ($res->toArray()['available']) {
-                        $result = 'beschikbaar';
-                    } else {
-                        $result = 'niet beschikbaar';
+                            sleep($this->toSleep);
+
+                            $baseUrl = 'https://elhacker.net/whois.html';
+
+                            $endpoint = $baseUrl . '?domain=' . trim(strtolower($data[0])) . $targetTopDomain;
+
+                            $content = file_get_contents($endpoint);
+
+                            $subsets = explode('<pre>', $content);
+
+                            $subsets2 = explode('</div>', $subsets[1]);
+
+                            $check = str_replace('</pre>', '', strtolower($subsets2[0]));
+
+                            /**
+                             * Set result set.
+                             */
+                            if (strpos($check, 'no match') !== false || strpos($check, 'is free') !== false || strpos($check, 'not found') !== false) {
+                                $result = 'beschikbaar';
+                            } else {
+                                $result = 'niet beschikbaar';
+                            }
+        
+                            $resultSet[] = [
+                                (trim(strtolower($data[0])) . $targetTopDomain),
+                                $result
+                            ];
+
+                            break;
                     }
 
-                    $resultSet[] = [
-                        (trim(strtolower($data[0])) . $targetTopDomain),
-                        $result
-                    ];
 
                 }
 
